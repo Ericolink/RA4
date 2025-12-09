@@ -1,6 +1,6 @@
 const { Pool } = require('pg');
 
-// Crear pool de conexiones
+// Crear pool de conexiones con SSL
 const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -8,7 +8,10 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
   max: 10,
-  idleTimeoutMillis: 30000
+  idleTimeoutMillis: 30000,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 async function main() {
