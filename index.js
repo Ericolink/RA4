@@ -1,16 +1,34 @@
 const mysql = require('mysql2/promise');
 
-async function main() {
-  const connection = await mysql.createConnection({
-    host: "dpg-d4rmqpemcj7s73f7g6eg-a",      // tu host de Render
-    user: "admin",
-    password: "AVcN7m3gu9uKzwzmJ9Yha2QNex4LWc92", // tu password
-    database: "midb_n83a",                    // tu DB
-  });
+// Función para conectarse con reintentos
+async function connectWithRetry() {
+  let connected = false;
+  let retries = 5;
+  let connection;
 
-  // Prueba de conexión
-  const [rows] = await connection.execute('SELECT NOW() AS now');
-  console.log('Conexión exitosa, hora actual en DB:', rows[0].now);
+  while (!connected && retries > 0) {
+    try {
+      connection = await mysql.createConnection({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
+      });
+      connected = true;
+      console.log("Conexión exitosa a la base de datos");
+      return connection;
+    } catch (err) {
+      console.log(`Error de conexión, reintentando en 5s... (${err.message})`);
+      await new Promise(r => setTimeout(r, 5000));
+      retries--;
+    }
+  }
+
+  throw new Error("No se pudo conectar a la base de datos");
+}
+
+async function main() {
+  const connection = await connectWithRetry();
 
   // Crear tabla de personajes si no existe
   await connection.execute(`
@@ -45,29 +63,29 @@ async function main() {
 
   console.log("Tablas 'personajes', 'tesoros' y 'recetas' listas");
 
-  // Ejemplo: insertar algunos datos de One Piece
+  // Insertar datos iniciales (solo si no existen)
   await connection.execute(`
-    INSERT INTO personajes (nombre, alias, fruta_del_diablo, tripulacion)
+    INSERT IGNORE INTO personajes (id, nombre, alias, fruta_del_diablo, tripulacion)
     VALUES 
-      ('Monkey D. Luffy', 'Sombrero de Paja', 'Gomu Gomu no Mi', 'Sombrero de Paja'),
-      ('Roronoa Zoro', 'Cazador de Piratas', '', 'Sombrero de Paja')
+      (1, 'Monkey D. Luffy', 'Sombrero de Paja', 'Gomu Gomu no Mi', 'Sombrero de Paja'),
+      (2, 'Roronoa Zoro', 'Cazador de Piratas', '', 'Sombrero de Paja')
   `);
 
   await connection.execute(`
-    INSERT INTO tesoros (nombre, descripcion, ubicacion)
+    INSERT IGNORE INTO tesoros (id, nombre, descripcion, ubicacion)
     VALUES
-      ('One Piece', 'El tesoro legendario de Gol D. Roger', 'Raftel'),
-      ('Vivre Card', 'Carta especial que indica la ubicación de un pirata', 'Variable')
+      (1, 'One Piece', 'El tesoro legendario de Gol D. Roger', 'Raftel'),
+      (2, 'Vivre Card', 'Carta especial que indica la ubicación de un pirata', 'Variable')
   `);
 
   await connection.execute(`
-    INSERT INTO recetas (nombre, tipo, descripcion)
+    INSERT IGNORE INTO recetas (id, nombre, tipo, descripcion)
     VALUES
-      ('Ramen de Sanji', 'Plato', 'El famoso ramen que prepara Sanji para la tripulación'),
-      ('Meat on the Bone', 'Plato', 'La gran carne que Luffy siempre quiere comer')
+      (1, 'Ramen de Sanji', 'Plato', 'El famoso ramen que prepara Sanji para la tripulación'),
+      (2, 'Meat on the Bone', 'Plato', 'La gran carne que Luffy siempre quiere comer')
   `);
 
   console.log("Datos iniciales insertados correctamente");
 }
 
-main();
+main().catch(err => console.error("Error en la app:", err));
