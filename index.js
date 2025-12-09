@@ -1,4 +1,8 @@
 const { Pool } = require('pg');
+const express = require('express');
+
+const app = express();
+const port = process.env.PORT || 3000;
 
 // Crear pool de conexiones con SSL
 const pool = new Pool({
@@ -7,20 +11,15 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
-async function main() {
+// Función para inicializar DB
+async function initDB() {
   try {
-    // Probar conexión
-    const res = await pool.query('SELECT NOW()');
-    console.log('Conexión exitosa, hora actual en DB:', res.rows[0].now);
+    await pool.query('SELECT NOW()'); // Probar conexión
+    console.log('Conexión exitosa a la DB');
 
-    // Crear tabla de personajes
     await pool.query(`
       CREATE TABLE IF NOT EXISTS personajes (
         id SERIAL PRIMARY KEY,
@@ -31,7 +30,6 @@ async function main() {
       )
     `);
 
-    // Crear tabla de tesoros
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tesoros (
         id SERIAL PRIMARY KEY,
@@ -41,7 +39,6 @@ async function main() {
       )
     `);
 
-    // Crear tabla de recetas
     await pool.query(`
       CREATE TABLE IF NOT EXISTS recetas (
         id SERIAL PRIMARY KEY,
@@ -51,35 +48,21 @@ async function main() {
       )
     `);
 
-    console.log("Tablas 'personajes', 'tesoros' y 'recetas' listas");
-
-    // Insertar datos iniciales
-    await pool.query(`
-      INSERT INTO personajes (nombre, alias, fruta_del_diablo, tripulacion)
-      VALUES 
-        ('Monkey D. Luffy', 'Sombrero de Paja', 'Gomu Gomu no Mi', 'Sombrero de Paja')
-      ON CONFLICT DO NOTHING
-    `);
-
-    await pool.query(`
-      INSERT INTO tesoros (nombre, descripcion, ubicacion)
-      VALUES
-        ('One Piece', 'El tesoro legendario de Gol D. Roger', 'Raftel')
-      ON CONFLICT DO NOTHING
-    `);
-
-    await pool.query(`
-      INSERT INTO recetas (nombre, tipo, descripcion)
-      VALUES
-        ('Ramen de Sanji', 'Plato', 'El famoso ramen que prepara Sanji para la tripulación')
-      ON CONFLICT DO NOTHING
-    `);
-
-    console.log("Datos iniciales insertados correctamente");
-
+    console.log("Tablas listas");
   } catch (err) {
     console.error("Error en la DB:", err);
   }
 }
 
-main();
+// Rutas de ejemplo
+app.get('/', async (req, res) => {
+  const personajes = await pool.query('SELECT * FROM personajes');
+  res.json(personajes.rows);
+});
+
+// Inicializar DB y arrancar servidor
+initDB().then(() => {
+  app.listen(port, () => {
+    console.log(`Servidor escuchando en el puerto ${port}`);
+  });
+});
