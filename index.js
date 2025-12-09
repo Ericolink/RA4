@@ -1,23 +1,28 @@
-const express = require('express');
-const app = express();
-const port = 3000;
+const mysql = require('mysql2/promise');
 
-const onePieceCharacters = [
-  { nombre: "Monkey D. Luffy", fruta: "Gomu Gomu no Mi" },
-  { nombre: "Roronoa Zoro", fruta: "No tiene" },
-  { nombre: "Nami", fruta: "No tiene" },
-  { nombre: "Sanji", fruta: "No tiene" }
-];
-
-app.get('/', (req, res) => {
-  let html = '<h1>Personajes de One Piece</h1><ul>';
-  onePieceCharacters.forEach(c => {
-    html += `<li>${c.nombre} - Fruta: ${c.fruta}</li>`;
+async function main() {
+  const connection = await mysql.createConnection({
+    host: "dpg-d4rmqpemcj7s73f7g6eg-a",      // ejemplo: onepiece-db.render.com
+    user: "admin",
+    password: "AVcN7m3gu9uKzwzmJ9Yha2QNex4LWc92",
+    database: "midb_n83a",
   });
-  html += '</ul>';
-  res.send(html);
-});
 
-app.listen(port, () => {
-  console.log(`App de One Piece escuchando en http://localhost:${port}`);
-});
+  // Prueba de conexión
+  const [rows] = await connection.execute('SELECT NOW() AS now');
+  console.log('Conexión exitosa, hora actual en DB:', rows[0].now);
+
+  // Aquí puedes crear tablas si no existen
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS recetas (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nombre VARCHAR(100),
+      tipo VARCHAR(50),
+      descripcion TEXT
+    )
+  `);
+
+  console.log("Tabla 'recetas' lista");
+}
+
+main();
