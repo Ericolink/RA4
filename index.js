@@ -4,7 +4,6 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Crear pool de conexiones con SSL
 const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -14,13 +13,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Función para inicializar DB y datos
 async function initDB() {
   try {
-    await pool.query('SELECT NOW()'); // Probar conexión
+    await pool.query('SELECT NOW()');
     console.log('Conexión exitosa a la DB');
 
-    // Crear tablas
     await pool.query(`
       CREATE TABLE IF NOT EXISTS personajes (
         id SERIAL PRIMARY KEY,
@@ -49,7 +46,6 @@ async function initDB() {
       )
     `);
 
-    // Insertar datos iniciales si no existen
     await pool.query(`
       INSERT INTO personajes (nombre, alias, fruta_del_diablo, tripulacion)
       VALUES 
@@ -78,11 +74,10 @@ async function initDB() {
     console.log("Tablas y datos iniciales listos");
 
   } catch (err) {
-    console.error("Error en la DB:", err);
+    console.error("Error DB:", err);
   }
 }
 
-// Ruta principal: mini catálogo
 app.get('/', async (req, res) => {
   try {
     const personajes = await pool.query('SELECT * FROM personajes');
@@ -90,21 +85,65 @@ app.get('/', async (req, res) => {
     const recetas = await pool.query('SELECT * FROM recetas');
 
     let html = `
-      <html>
-        <head>
-          <title>Mini Catálogo One Piece</title>
-          <style>
-            body { font-family: Arial; background: #f5f5f5; margin: 0; padding: 0; }
-            h1, h2 { text-align: center; }
-            .section { padding: 20px; }
-            .card { background: #fff; padding: 15px; margin: 10px auto; border-radius: 8px; max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-          </style>
-        </head>
-        <body>
-          <h1>Mini Catálogo One Piece</h1>
-          
-          <div class="section">
-            <h2>Personajes</h2>
+    <html>
+      <head>
+        <title>Mini Catálogo One Piece</title>
+        <link href="https://fonts.cdnfonts.com/css/one-piece" rel="stylesheet">
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            background: url("https://i.imgur.com/gJ6ISGv.jpeg") no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial;
+            color: #fff;
+          }
+          h1 {
+            font-family: 'One Piece', sans-serif;
+            text-align: center;
+            font-size: 50px;
+            color: #ffdd00;
+            text-shadow: 3px 3px #000;
+            margin-top: 20px;
+          }
+          h2 {
+            text-align: center;
+            font-size: 32px;
+            color: #ffe28a;
+            text-shadow: 3px 3px #000;
+          }
+          .section {
+            padding: 25px;
+          }
+          .card {
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 12px;
+            max-width: 450px;
+            border: 2px solid #ffdd00;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+          }
+          .card h3 {
+            color: #ffdd00;
+            margin-bottom: 10px;
+          }
+          .divider {
+            height: 4px;
+            background: #ffdd00;
+            margin: 20px auto;
+            width: 80%;
+            border-radius: 2px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Mini Catálogo One Piece</h1>
+
+        <div class="section">
+          <h2>🏴‍☠️ Personajes</h2>
+          <div class="divider"></div>
     `;
 
     personajes.rows.forEach(p => {
@@ -117,7 +156,12 @@ app.get('/', async (req, res) => {
       `;
     });
 
-    html += `<div class="section"><h2>Tesoros</h2>`;
+    html += `
+        <div class="section">
+          <h2>💰 Tesoros Legendarios</h2>
+          <div class="divider"></div>
+    `;
+
     tesoros.rows.forEach(t => {
       html += `
         <div class="card">
@@ -128,7 +172,12 @@ app.get('/', async (req, res) => {
       `;
     });
 
-    html += `<div class="section"><h2>Recetas</h2>`;
+    html += `
+        <div class="section">
+          <h2>🍜 Recetas del Baratie</h2>
+          <div class="divider"></div>
+    `;
+
     recetas.rows.forEach(r => {
       html += `
         <div class="card">
@@ -140,20 +189,18 @@ app.get('/', async (req, res) => {
     });
 
     html += `
-        </body>
-      </html>
+      </body>
+    </html>
     `;
 
     res.send(html);
 
   } catch (err) {
+    console.error(err);
     res.status(500).send("Error al cargar el catálogo");
   }
 });
 
-// Inicializar DB y arrancar servidor
 initDB().then(() => {
-  app.listen(port, () => {
-    console.log(`Servidor escuchando en el puerto ${port}`);
-  });
+  app.listen(port, () => console.log(`Servidor en puerto ${port}`));
 });
