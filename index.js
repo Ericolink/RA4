@@ -93,7 +93,7 @@ app.get('/', async (req, res) => {
           body {
             margin: 0;
             padding: 0;
-            background: url("https://i.imgur.com/gJ6ISGv.jpeg") no-repeat center center fixed;
+            background: url("https://tse4.mm.bing.net/th/id/OIP.Tv5D4kK6ooxiPB4-_f8bOQHaEK?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3") no-repeat center center fixed;
             background-size: cover;
             font-family: Arial;
             color: #fff;
