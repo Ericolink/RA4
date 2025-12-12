@@ -1,7 +1,7 @@
-# Imagen base Node.js
-FROM node:20
+# Imagen base
+FROM node:18
 
-# Directorio de trabajo
+# Crear directorio de la app
 WORKDIR /app
 
 # Copiar package.json y package-lock.json
@@ -10,10 +10,10 @@ COPY package*.json ./
 # Instalar dependencias
 RUN npm install
 
-# Copiar el resto del código
+# Copiar todo el proyecto
 COPY . .
 
-# Exponer puerto 3000
+# Exponer el puerto de la aplicación
 EXPOSE 3000
 
 # Comando para iniciar la app
